@@ -36,8 +36,10 @@ export const StateContext = ({ children }) => {
                 }
             })
             setCartItems(updatedCartItems)
+            localStorage.setItem('cartItems', JSON.stringify(cartItems))
         } else {
             product.quantity = quantity;
+            localStorage.setItem('cartItems', JSON.stringify([...cartItems, { ...product }]))
             setCartItems([...cartItems, { ...product }])
         }
 
@@ -54,12 +56,15 @@ export const StateContext = ({ children }) => {
             setCartItems([{ ...foundProduct, quantity: foundProduct.quantity + 1 }, ...newCartItems])
             setTotalPrice(prev => prev + foundProduct.price)
             setTotalQuantities(prev => prev + 1)
+            localStorage.setItem('cartItems', JSON.stringify([{ ...foundProduct, quantity: foundProduct.quantity + 1 }, ...newCartItems]))
         } else if (value === 'dec') {
+            if (foundProduct.quantity <= 1) return
             if (foundProduct.quantity > 0) {
                 cartItems.splice(index, 1)
                 setCartItems([...newCartItems, { ...foundProduct, quantity: foundProduct.quantity - 1 }])
                 setTotalPrice(prev => prev - foundProduct.price)
                 setTotalQuantities(prev => prev - 1)
+                localStorage.setItem('cartItems', JSON.stringify([...newCartItems, { ...foundProduct, quantity: foundProduct.quantity - 1 }]))
             }
         }
     }
@@ -70,8 +75,20 @@ export const StateContext = ({ children }) => {
 
         setTotalPrice(prev => prev - foundProduct.price * foundProduct.quantity)
         setTotalQuantities(prev => prev - foundProduct.quantity)
+        localStorage.setItem('cartItems', JSON.stringify(newCartItems))
         setCartItems(newCartItems)
     }
+
+    useEffect(() => {
+        const cartItems = JSON.parse(localStorage.getItem('cartItems'))
+        if (cartItems) {
+            setCartItems(cartItems)
+            cartItems.forEach(item => {
+                setTotalPrice(prev => prev + item.price * item.quantity)
+                setTotalQuantities(prev => prev + item.quantity)
+            })
+        }
+    }, [])
 
     return (
         <Context.Provider value={{
